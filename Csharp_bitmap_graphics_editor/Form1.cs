@@ -5,12 +5,18 @@ namespace Csharp_bitmap_graphics_editor
 {
     public partial class Form1 : Form
     {
+        private Stack<Bitmap> undoStack = new Stack<Bitmap>();
+        private Stack<Bitmap> redoStack = new Stack<Bitmap>();
         public Form1()
         {
+
             InitializeComponent();
             this.KeyPreview = true;
             this.KeyDown += Form1_KeyDown;
             SetSize();
+            pictureBox1.Image = map;
+            undoStack.Push(new Bitmap(pictureBox1.Image));
+            redoStack.Clear();
         }
         private class ArrayPoints
         {
@@ -61,10 +67,6 @@ namespace Csharp_bitmap_graphics_editor
             pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
             pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
         }
-        private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
         private bool isMouse = false; //Зажата ли лкм
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -73,16 +75,35 @@ namespace Csharp_bitmap_graphics_editor
             {
                 toolStripMenuItem1.ShowDropDown();
             }
+
+            if (e.Button == MouseButtons.Left)
+            {
+                isMouse = true;
+                arrayPoints.ResetPoints();
+            }
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
             isMouse = false;
             arrayPoints.ResetPoints();
+
+            if (e.Button == MouseButtons.Left)
+            {
+                isMouse = false;
+
+                // Создаем новую копию текущего изображения
+                Bitmap currentImage = new Bitmap(pictureBox1.Image);
+                // Сохраняем текущее состояние изображения в стеке "Отменить"
+                undoStack.Push(currentImage);
+                // Очищаем стек "Вернуть" при каждом новом действии
+                redoStack.Clear();
+            }
         }
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
+
             if (!isMouse) { return; }
             arrayPoints.SetPoint(e.X, e.Y);
             if (arrayPoints.GetCountPoints() >= 2)
@@ -169,6 +190,20 @@ namespace Csharp_bitmap_graphics_editor
                         break;
                 }
             }
+            if (e.Control && e.KeyCode == Keys.Z)
+            {
+                // Обрабатываем нажатие клавиши Ctrl+Z для отмены действия
+                Undo();
+                // Предотвращаем дальнейшую обработку события нажатия клавиши
+                e.Handled = true;
+            }
+            else if (e.Control && e.KeyCode == Keys.Y)
+            {
+                // Обрабатываем нажатие клавиши Ctrl+Y для возврата действия
+                Redo();
+                // Предотвращаем дальнейшую обработку события нажатия клавиши
+                e.Handled = true;
+            }
         }
 
         private void pasteCTRLVToolStripMenuItem_Click(object sender, EventArgs e)
@@ -179,6 +214,42 @@ namespace Csharp_bitmap_graphics_editor
         private void copyToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CopyImageToClipboard();
+        }
+
+        private void undoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Undo();
+        }
+
+        private void redoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Redo();
+        }
+        private void Undo()
+        {
+            if (undoStack.Count > 1)
+            {
+                // Извлекаем последнее состояние из стека "Отменить"
+                Bitmap previousImage = undoStack.Pop();
+                // Добавляем текущее состояние в стек "Вернуть"
+                redoStack.Push(new Bitmap(pictureBox1.Image));
+                // Устанавливаем предыдущее состояние в качестве текущего изображения
+                pictureBox1.Image = new Bitmap(previousImage);
+                pictureBox1.Refresh();
+            }
+        }
+        private void Redo()
+        {
+            if (redoStack.Count > 0)
+            {
+                // Извлекаем последнее состояние из стека "Вернуть"
+                Bitmap nextImage = redoStack.Pop();
+                // Добавляем текущее состояние в стек "Отменить"
+                undoStack.Push(new Bitmap(pictureBox1.Image));
+                // Устанавливаем следующее состояние в качестве текущего изображения
+                pictureBox1.Image = new Bitmap(nextImage);
+                pictureBox1.Refresh();
+            }
         }
     }
 }

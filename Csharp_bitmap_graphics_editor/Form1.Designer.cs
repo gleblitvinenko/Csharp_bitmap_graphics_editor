@@ -54,6 +54,8 @@
             toolStripMenuItem1 = new ToolStripMenuItem();
             pasteCTRLVToolStripMenuItem = new ToolStripMenuItem();
             copyToolStripMenuItem = new ToolStripMenuItem();
+            undoToolStripMenuItem = new ToolStripMenuItem();
+            redoToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             panel1.SuspendLayout();
             panel2.SuspendLayout();
@@ -247,7 +249,7 @@
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(20, 20);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, clearToolStripMenuItem, toolStripMenuItem1 });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, clearToolStripMenuItem, toolStripMenuItem1, undoToolStripMenuItem, redoToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(800, 28);
@@ -286,7 +288,7 @@
             // 
             pasteCTRLVToolStripMenuItem.Name = "pasteCTRLVToolStripMenuItem";
             pasteCTRLVToolStripMenuItem.ShortcutKeyDisplayString = "CTRL + V";
-            pasteCTRLVToolStripMenuItem.Size = new Size(224, 26);
+            pasteCTRLVToolStripMenuItem.Size = new Size(195, 26);
             pasteCTRLVToolStripMenuItem.Text = "Paste";
             pasteCTRLVToolStripMenuItem.ToolTipText = "CTRL + V";
             pasteCTRLVToolStripMenuItem.Click += pasteCTRLVToolStripMenuItem_Click;
@@ -295,10 +297,24 @@
             // 
             copyToolStripMenuItem.Name = "copyToolStripMenuItem";
             copyToolStripMenuItem.ShortcutKeyDisplayString = "CTRL + C";
-            copyToolStripMenuItem.Size = new Size(224, 26);
+            copyToolStripMenuItem.Size = new Size(195, 26);
             copyToolStripMenuItem.Text = "Copy";
             copyToolStripMenuItem.ToolTipText = "CTRL + C";
             copyToolStripMenuItem.Click += copyToolStripMenuItem_Click;
+            // 
+            // undoToolStripMenuItem
+            // 
+            undoToolStripMenuItem.Name = "undoToolStripMenuItem";
+            undoToolStripMenuItem.Size = new Size(59, 24);
+            undoToolStripMenuItem.Text = "Undo";
+            undoToolStripMenuItem.Click += undoToolStripMenuItem_Click;
+            // 
+            // redoToolStripMenuItem
+            // 
+            redoToolStripMenuItem.Name = "redoToolStripMenuItem";
+            redoToolStripMenuItem.Size = new Size(58, 24);
+            redoToolStripMenuItem.Text = "Redo";
+            redoToolStripMenuItem.Click += redoToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -352,5 +368,7 @@
         private ToolStripMenuItem toolStripMenuItem1;
         private ToolStripMenuItem pasteCTRLVToolStripMenuItem;
         private ToolStripMenuItem copyToolStripMenuItem;
+        private ToolStripMenuItem undoToolStripMenuItem;
+        private ToolStripMenuItem redoToolStripMenuItem;
     }
 }
