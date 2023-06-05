@@ -251,5 +251,10 @@ namespace Csharp_bitmap_graphics_editor
                 pictureBox1.Refresh();
             }
         }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
     }
 }
