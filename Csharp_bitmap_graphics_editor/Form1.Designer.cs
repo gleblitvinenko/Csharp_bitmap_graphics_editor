@@ -49,6 +49,7 @@
             colorDialog1 = new ColorDialog();
             saveFileDialog1 = new SaveFileDialog();
             panel3 = new Panel();
+            rectangleButton = new Button();
             ellipseButton = new Button();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
@@ -276,6 +277,7 @@
             // 
             // panel3
             // 
+            panel3.Controls.Add(rectangleButton);
             panel3.Controls.Add(ellipseButton);
             panel3.Controls.Add(panel2);
             panel3.Controls.Add(panel1);
@@ -285,11 +287,21 @@
             panel3.Size = new Size(201, 429);
             panel3.TabIndex = 5;
             // 
+            // rectangleButton
+            // 
+            rectangleButton.Location = new Point(99, 232);
+            rectangleButton.Name = "rectangleButton";
+            rectangleButton.Size = new Size(90, 44);
+            rectangleButton.TabIndex = 6;
+            rectangleButton.Text = "Rectangle";
+            rectangleButton.UseVisualStyleBackColor = true;
+            rectangleButton.Click += rectangleButton_Click;
+            // 
             // ellipseButton
             // 
-            ellipseButton.Location = new Point(44, 232);
+            ellipseButton.Location = new Point(8, 232);
             ellipseButton.Name = "ellipseButton";
-            ellipseButton.Size = new Size(102, 44);
+            ellipseButton.Size = new Size(85, 44);
             ellipseButton.TabIndex = 5;
             ellipseButton.Text = "Ellipse";
             ellipseButton.UseVisualStyleBackColor = true;
@@ -452,5 +464,6 @@
         private Button ellipseButton;
         private Button currentColorButton;
         private Button eraserButton;
+        private Button rectangleButton;
     }
 }

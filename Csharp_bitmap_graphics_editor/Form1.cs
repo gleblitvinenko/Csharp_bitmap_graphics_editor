@@ -8,6 +8,8 @@ namespace Csharp_bitmap_graphics_editor
         private string saveFilePath = string.Empty;
         private Color backgroundColor = Color.White;
 
+        private bool isDrawingRectangle = false;
+
         private bool isDrawingEllipse = false;
         private Point startPoint;
 
@@ -76,7 +78,7 @@ namespace Csharp_bitmap_graphics_editor
 
             undoStack.Push(new Bitmap(map));
         }
-        private bool isMouse = false; //Зажата ли лкм
+        private bool isMouse = false;
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             isMouse = true;
@@ -86,6 +88,10 @@ namespace Csharp_bitmap_graphics_editor
             }
 
             if (isDrawingEllipse)
+            {
+                startPoint = e.Location;
+            }
+            else if (isDrawingRectangle)
             {
                 startPoint = e.Location;
             }
@@ -104,7 +110,7 @@ namespace Csharp_bitmap_graphics_editor
 
             if (isDrawingEllipse)
             {
-                // Рисуем эллипс между startPoint и текущей позицией мыши
+
                 int width = Math.Abs(e.X - startPoint.X);
                 int height = Math.Abs(e.Y - startPoint.Y);
                 int x = Math.Min(startPoint.X, e.X);
@@ -112,11 +118,25 @@ namespace Csharp_bitmap_graphics_editor
                 graphics.DrawEllipse(pen, x, y, width, height);
                 pictureBox1.Image = map;
 
-                // Сбрасываем флаг рисования эллипса
+
                 isDrawingEllipse = false;
                 ellipseButton.BackColor = SystemColors.Control;
 
-                // Сохраняем состояние для отмены
+
+                undoStack.Push(new Bitmap(map));
+            }
+            if (isDrawingRectangle)
+            {
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                graphics.DrawRectangle(pen, x, y, width, height);
+                pictureBox1.Image = map;
+
+                isDrawingRectangle = false;
+                rectangleButton.BackColor = SystemColors.Control;
+
                 undoStack.Push(new Bitmap(map));
             }
         }
@@ -126,7 +146,7 @@ namespace Csharp_bitmap_graphics_editor
             if (!isMouse) { return; }
             if (isDrawingEllipse)
             {
-                // Обновляем PictureBox с промежуточным рисунком эллипса
+
                 Bitmap tempMap = new Bitmap(map);
                 Graphics tempGraphics = Graphics.FromImage(tempMap);
                 int width = Math.Abs(e.X - startPoint.X);
@@ -134,6 +154,18 @@ namespace Csharp_bitmap_graphics_editor
                 int x = Math.Min(startPoint.X, e.X);
                 int y = Math.Min(startPoint.Y, e.Y);
                 tempGraphics.DrawEllipse(pen, x, y, width, height);
+                pictureBox1.Image = tempMap;
+                tempGraphics.Dispose();
+            }
+            else if (isDrawingRectangle)
+            {
+                Bitmap tempMap = new Bitmap(map);
+                Graphics tempGraphics = Graphics.FromImage(tempMap);
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                tempGraphics.DrawRectangle(pen, x, y, width, height);
                 pictureBox1.Image = tempMap;
                 tempGraphics.Dispose();
             }
@@ -217,22 +249,22 @@ namespace Csharp_bitmap_graphics_editor
         }
         private void CopyImageToClipboard()
         {
-            // Предположим, что у вас есть изображение, которое нужно скопировать
+
             Image imageToCopy = pictureBox1.Image;
 
-            // Копирование изображения в буфер обмена
+
             Clipboard.SetImage(imageToCopy);
         }
 
         private void PasteImageFromClipboard()
         {
-            // Проверяем, содержит ли буфер обмена изображение
+
             if (Clipboard.ContainsImage())
             {
-                // Получаем изображение из буфера обмена
+
                 Image imageToPaste = Clipboard.GetImage();
 
-                // Сохраняем изображение в переменную map
+
                 graphics.Clear(pictureBox1.BackColor);
                 graphics.DrawImage(imageToPaste, 0, 0);
                 pictureBox1.Image = map;
@@ -242,15 +274,15 @@ namespace Csharp_bitmap_graphics_editor
         {
             if (e.Control && (e.KeyCode == Keys.C || e.KeyCode == Keys.V))
             {
-                // Обрабатываем нажатие клавиш Ctrl+C и Ctrl+V
+                // Ctrl+C и Ctrl+V
                 switch (e.KeyCode)
                 {
                     case Keys.C:
-                        // Выполняем копирование
+
                         CopyImageToClipboard();
                         break;
                     case Keys.V:
-                        // Выполняем вставку
+
                         PasteImageFromClipboard();
                         break;
                 }
@@ -347,7 +379,64 @@ namespace Csharp_bitmap_graphics_editor
 
         private void eraserButton_Click(object sender, EventArgs e)
         {
-            pen.Color = Color.White; 
+            pen.Color = Color.White;
+        }
+
+        private void rectangleButton_Click(object sender, EventArgs e)
+        {
+            isDrawingRectangle = !isDrawingRectangle;
+
+            if (isDrawingRectangle)
+            {
+                rectangleButton.BackColor = Color.LightGreen;
+            }
+            else
+            {
+                rectangleButton.BackColor = SystemColors.Control;
+            }
+        }
+
+        private void pictureBox1_MouseDown_Rectangle(object sender, MouseEventArgs e)
+        {
+            
+            // ...
+        }
+
+        private void pictureBox1_MouseUp_Rectangle(object sender, MouseEventArgs e)
+        {
+            // ...
+            if (isDrawingRectangle)
+            {
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                graphics.DrawRectangle(pen, x, y, width, height);
+                pictureBox1.Image = map;
+
+                isDrawingRectangle = false;
+                rectangleButton.BackColor = SystemColors.Control;
+
+                undoStack.Push(new Bitmap(map));
+            }
+        }
+
+        private void pictureBox1_MouseMove_Rectangle(object sender, MouseEventArgs e)
+        {
+            // ...
+            if (isDrawingRectangle)
+            {
+                Bitmap tempMap = new Bitmap(map);
+                Graphics tempGraphics = Graphics.FromImage(tempMap);
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                tempGraphics.DrawRectangle(pen, x, y, width, height);
+                pictureBox1.Image = tempMap;
+                tempGraphics.Dispose();
+            }
+            // ...
         }
     }
 }
