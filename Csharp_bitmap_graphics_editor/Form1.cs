@@ -5,19 +5,24 @@ namespace Csharp_bitmap_graphics_editor
 {
     public partial class Form1 : Form
     {
-        private Stack<Bitmap> undoStack = new Stack<Bitmap>();
-        private Stack<Bitmap> redoStack = new Stack<Bitmap>();
-        public Form1()
-        {
+        private string saveFilePath = string.Empty;
+        private Color backgroundColor = Color.White;
 
+        private bool isDrawingEllipse = false;
+        private Point startPoint;
+
+        Stack<Bitmap> undoStack = new Stack<Bitmap>();
+        public Form1()
+
+        {
             InitializeComponent();
             this.KeyPreview = true;
             this.KeyDown += Form1_KeyDown;
             SetSize();
-            pictureBox1.Image = map;
-            undoStack.Push(new Bitmap(pictureBox1.Image));
-            redoStack.Clear();
+
+
         }
+
         private class ArrayPoints
         {
             private int index = 0;
@@ -64,8 +69,12 @@ namespace Csharp_bitmap_graphics_editor
             map = new Bitmap(rectangle.Width, rectangle.Height);
             graphics = Graphics.FromImage(map);
 
+            pictureBox1.BackColor = backgroundColor;
+
             pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
             pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+
+            undoStack.Push(new Bitmap(map));
         }
         private bool isMouse = false; //Зажата ли лкм
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -76,10 +85,13 @@ namespace Csharp_bitmap_graphics_editor
                 toolStripMenuItem1.ShowDropDown();
             }
 
-            if (e.Button == MouseButtons.Left)
+            if (isDrawingEllipse)
             {
-                isMouse = true;
-                arrayPoints.ResetPoints();
+                startPoint = e.Location;
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                toolStripMenuItem1.ShowDropDown();
             }
         }
 
@@ -88,35 +100,59 @@ namespace Csharp_bitmap_graphics_editor
             isMouse = false;
             arrayPoints.ResetPoints();
 
-            if (e.Button == MouseButtons.Left)
-            {
-                isMouse = false;
+            undoStack.Push(new Bitmap(map));
 
-                // Создаем новую копию текущего изображения
-                Bitmap currentImage = new Bitmap(pictureBox1.Image);
-                // Сохраняем текущее состояние изображения в стеке "Отменить"
-                undoStack.Push(currentImage);
-                // Очищаем стек "Вернуть" при каждом новом действии
-                redoStack.Clear();
+            if (isDrawingEllipse)
+            {
+                // Рисуем эллипс между startPoint и текущей позицией мыши
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                graphics.DrawEllipse(pen, x, y, width, height);
+                pictureBox1.Image = map;
+
+                // Сбрасываем флаг рисования эллипса
+                isDrawingEllipse = false;
+                ellipseButton.BackColor = SystemColors.Control;
+
+                // Сохраняем состояние для отмены
+                undoStack.Push(new Bitmap(map));
             }
         }
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-
             if (!isMouse) { return; }
-            arrayPoints.SetPoint(e.X, e.Y);
-            if (arrayPoints.GetCountPoints() >= 2)
+            if (isDrawingEllipse)
             {
-                graphics.DrawLines(pen, arrayPoints.GetPoints());
-                pictureBox1.Image = map;
+                // Обновляем PictureBox с промежуточным рисунком эллипса
+                Bitmap tempMap = new Bitmap(map);
+                Graphics tempGraphics = Graphics.FromImage(tempMap);
+                int width = Math.Abs(e.X - startPoint.X);
+                int height = Math.Abs(e.Y - startPoint.Y);
+                int x = Math.Min(startPoint.X, e.X);
+                int y = Math.Min(startPoint.Y, e.Y);
+                tempGraphics.DrawEllipse(pen, x, y, width, height);
+                pictureBox1.Image = tempMap;
+                tempGraphics.Dispose();
+            }
+            else
+            {
                 arrayPoints.SetPoint(e.X, e.Y);
+                if (arrayPoints.GetCountPoints() >= 2)
+                {
+                    graphics.DrawLines(pen, arrayPoints.GetPoints());
+                    pictureBox1.Image = map;
+                    arrayPoints.SetPoint(e.X, e.Y);
+                }
             }
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             pen.Color = ((Button)sender).BackColor;
+            currentColorButton.BackColor = ((Button)sender).BackColor;
         }
 
         private void button12_Click(object sender, EventArgs e)
@@ -125,6 +161,7 @@ namespace Csharp_bitmap_graphics_editor
             {
                 pen.Color = colorDialog1.Color;
                 ((Button)sender).BackColor = colorDialog1.Color;
+                currentColorButton.BackColor = colorDialog1.Color;
             }
         }
 
@@ -141,12 +178,40 @@ namespace Csharp_bitmap_graphics_editor
 
         private void button1_Click(object sender, EventArgs e)
         {
+            SaveImage(saveFilePath);
+        }
+        private void saveAsToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
             saveFileDialog1.Filter = "JPG(*.JPG)|*.jpg";
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
+                saveFilePath = saveFileDialog1.FileName;
+                SaveImage(saveFilePath);
+            }
+        }
+
+        private void SaveImage(string filePath)
+        {
+            try
+            {
                 if (pictureBox1.Image != null)
                 {
-                    pictureBox1.Image.Save(saveFileDialog1.FileName);
+                    Bitmap imageToSave = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+                    using (Graphics g = Graphics.FromImage(imageToSave))
+                    {
+                        g.Clear(pictureBox1.BackColor);
+                        g.DrawImage(pictureBox1.Image, 0, 0);
+                    }
+                    imageToSave.Save(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                saveFileDialog1.Filter = "JPG(*.JPG)|*.jpg";
+                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+                {
+                    saveFilePath = saveFileDialog1.FileName;
+                    SaveImage(saveFilePath);
                 }
             }
         }
@@ -190,20 +255,6 @@ namespace Csharp_bitmap_graphics_editor
                         break;
                 }
             }
-            if (e.Control && e.KeyCode == Keys.Z)
-            {
-                // Обрабатываем нажатие клавиши Ctrl+Z для отмены действия
-                Undo();
-                // Предотвращаем дальнейшую обработку события нажатия клавиши
-                e.Handled = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.Y)
-            {
-                // Обрабатываем нажатие клавиши Ctrl+Y для возврата действия
-                Redo();
-                // Предотвращаем дальнейшую обработку события нажатия клавиши
-                e.Handled = true;
-            }
         }
 
         private void pasteCTRLVToolStripMenuItem_Click(object sender, EventArgs e)
@@ -215,7 +266,6 @@ namespace Csharp_bitmap_graphics_editor
         {
             CopyImageToClipboard();
         }
-
         private void undoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Undo();
@@ -223,38 +273,81 @@ namespace Csharp_bitmap_graphics_editor
 
         private void redoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Redo();
+            //Redo();
         }
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
         private void Undo()
         {
             if (undoStack.Count > 1)
             {
-                // Извлекаем последнее состояние из стека "Отменить"
-                Bitmap previousImage = undoStack.Pop();
-                // Добавляем текущее состояние в стек "Вернуть"
-                redoStack.Push(new Bitmap(pictureBox1.Image));
-                // Устанавливаем предыдущее состояние в качестве текущего изображения
-                pictureBox1.Image = new Bitmap(previousImage);
-                pictureBox1.Refresh();
-            }
-        }
-        private void Redo()
-        {
-            if (redoStack.Count > 0)
-            {
-                // Извлекаем последнее состояние из стека "Вернуть"
-                Bitmap nextImage = redoStack.Pop();
-                // Добавляем текущее состояние в стек "Отменить"
-                undoStack.Push(new Bitmap(pictureBox1.Image));
-                // Устанавливаем следующее состояние в качестве текущего изображения
-                pictureBox1.Image = new Bitmap(nextImage);
-                pictureBox1.Refresh();
+                // Pop the current state from the stack
+                undoStack.Pop();
+
+                // Get the previous state from the stack
+                Bitmap previousState = undoStack.Peek();
+
+                // Restore the previous state as the current image
+                map = new Bitmap(previousState);
+                graphics = Graphics.FromImage(map);
+
+                // Update the PictureBox with the restored image
+                pictureBox1.Image = map;
             }
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Close();
+            // OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog1.Filter = "Images|*.jpg;*.png;*.bmp|All Files|*.*";
+
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string selectedFilePath = openFileDialog1.FileName;
+                OpenImage(selectedFilePath);
+            }
+        }
+        private void OpenImage(string filePath)
+        {
+            try
+            {
+                Image openedImage = Image.FromFile(filePath);
+                graphics.Clear(pictureBox1.BackColor);
+                graphics.DrawImage(openedImage, 0, 0);
+                pictureBox1.Image = map;
+                undoStack.Push(new Bitmap(map));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при открытии файла: " + ex.Message);
+            }
+        }
+
+        private void helpToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("The program was developed by student of the group KIUKI-21-5\nLytvynenko Glieb");
+        }
+
+        private void ellipseButton_Click(object sender, EventArgs e)
+        {
+            isDrawingEllipse = !isDrawingEllipse;
+
+            if (isDrawingEllipse)
+            {
+                ellipseButton.BackColor = Color.LightGreen;
+            }
+            else
+            {
+                ellipseButton.BackColor = SystemColors.Control;
+            }
+        }
+
+        private void eraserButton_Click(object sender, EventArgs e)
+        {
+            pen.Color = Color.White; 
         }
     }
 }
